@@ -25,6 +25,7 @@
     .zoom-in-95 { animation-name: zoomIn; }
     .slide-in-from-right-8 { animation-name: slideInFromRight; }
     .slide-in-from-bottom-4 { animation-name: slideInFromBottom; }
+    .slide-in-from-bottom-8 { animation-name: slideInFromBottom; }
   </style>
 </head>
 <body class="bg-slate-50">
@@ -34,7 +35,7 @@
     const { useReducer, useEffect, useMemo } = React;
 
     // ==========================================
-    // 0. SVG Icon Components (Replacing lucide-react)
+    // 0. SVG Icon Components
     // ==========================================
     const ChevronRight = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>;
     const ChevronLeft = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>;
@@ -45,6 +46,9 @@
     const AlertCircle = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>;
     const Compass = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>;
     const Target = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>;
+    const HomeIcon = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
+    const ArrowLeft = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>;
+    const Users = ({className}) => <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
 
     // ==========================================
     // 1. 完整資料庫：88題題庫 (22題/維度)
@@ -53,7 +57,7 @@
       // E/I 維度 (22題)
       { id: 1, text: "在大型社交聚會中，我通常會主動與陌生人攀談。", dim: "EI", dir: 1 },
       { id: 2, text: "經過一整天與人密集互動後，我會感到精疲力盡並需要獨處。", dim: "EI", dir: -1 },
-      { id: 3, text: "我喜歡成為眾人矚目的焦點。", dim: "EI", dir: 1 }, // <--- Fixed the 1: 1 typo here
+      { id: 3, text: "我喜歡成為眾人矚目的焦點。", dim: "EI", dir: 1 },
       { id: 4, text: "我更喜歡與一兩個親密朋友深度交談，而不是參加大型派對。", dim: "EI", dir: -1 },
       { id: 5, text: "在團隊討論中，我通常是第一個發表意見的人。", dim: "EI", dir: 1 },
       { id: 6, text: "我習慣先在腦中整理好思緒，然後才開口表達。", dim: "EI", dir: -1 },
@@ -151,41 +155,218 @@
     // 2. 16型人格資料庫
     // ==========================================
     const PERSONALITIES = {
-      INTJ: { name: "建築師", traits: "想像力豐富且具戰略性", career: "系統工程師、企業策略師、科學家", warning: "小心過於傲慢與忽視他人情感。需學習接納不完美。" },
-      INTP: { name: "邏輯學家", traits: "具備創新精神、對知識充滿渴望", career: "軟體開發者、數據分析師、大學教授", warning: "避免過度沉迷於理論而脫離現實。需加強執行力。" },
-      ENTJ: { name: "指揮官", traits: "大膽、富有想像力且意志強大", career: "企業高管、律師、創業家", warning: "容易給人壓迫感，需學習傾聽與展現同理心。" },
-      ENTP: { name: "辯論家", traits: "聰明好奇、無法抗拒智力挑戰", career: "行銷創意、顧問、發明家", warning: "喜歡爭辯可能傷害和氣，應學會有時候「放手」。" },
-      INFJ: { name: "提倡者", traits: "安靜神秘，卻鼓舞人心且不知疲倦", career: "心理諮商師、作家、非營利組織領袖", warning: "容易把問題一肩扛起導致身心耗竭，請設定界線。" },
-      INFP: { name: "調停者", traits: "詩意、善良且利他主義", career: "藝術家、人力資源、內容創作者", warning: "過於理想化容易對現實失望，需建立落地執行的習慣。" },
-      ENFJ: { name: "主人公", traits: "充滿魅力與啟發性的領導者", career: "公關經理、教師、人資總監", warning: "過度關注他人需求而忽略自我，需留給自己喘息空間。" },
-      ENFP: { name: "競選者", traits: "熱情、富有創意且熱愛社交", career: "活動策劃、記者、品牌大使", warning: "專注力容易分散，應練習將一個項目徹底完成。" },
-      ISTJ: { name: "物流師", traits: "注重實用與事實，可靠性極高", career: "會計師、公務員、專案經理", warning: "過於固執於規則，需學會在變動中保持彈性。" },
-      ISFJ: { name: "守衛者", traits: "極度奉獻、隨時準備保護所愛之人", career: "護理師、社工、行政主管", warning: "習慣隱忍委屈，需學習勇敢表達自己的不滿和需求。" },
-      ESTJ: { name: "總經理", traits: "出色的管理者，無與倫比地管理事物", career: "營運總監、警官、金融經理", warning: "可能顯得死板且掌控慾強，應給予下屬更多信任與空間。" },
-      ESFJ: { name: "執政官", traits: "充滿愛心、極受歡迎並樂於助人", career: "護理人員、客服主管、活動主辦人", warning: "過度依賴外界的認同，需培養自我肯定的內在力量。" },
-      ISTP: { name: "鑑賞家", traits: "大膽實用的實驗者", career: "機械工程師、數據安全專家、飛行員", warning: "容易對長期承諾感到厭倦，需學習深耕一段關係或事業。" },
-      ISFP: { name: "探險家", traits: "靈活迷人的藝術家，時刻準備探索", career: "設計師、攝影師、自由工作者", warning: "面對衝突容易退縮，需建立應對壓力的健康機制。" },
-      ESTP: { name: "企業家", traits: "聰明精力充沛，享受邊緣生活", career: "銷售主管、創業家、體育教練", warning: "行事容易衝動不顧後果，做重大決定前需三思。" },
-      ESFP: { name: "表演者", traits: "自發精力充沛，生活不會無聊", career: "演員、公關人員、旅遊領隊", warning: "容易沉溺於當下享樂而忽略長遠規劃，需培養理財與規劃能力。" },
+      INTJ: { 
+        name: "建築師", 
+        shortDesc: "想像力豐富且具戰略性的思想家，一切皆在他們精密的計畫之中。",
+        quote: "思維的偉大不在於不犯錯，而在於能及時糾正錯誤。",
+        quoteAuthor: "佚名",
+        description: "建築師型人格（INTJ）是頂部孤獨的群體，他們是人數最少且最具戰略能力的人格類型之一。他們對知識有著無底的渴望，喜歡將事物拆解並重新構建，以期找到更優的系統和法則。他們從不隨波逐流，比起受人歡迎，他們更在乎自己是否正確、系統是否高效。雖然有時給人冷漠的印象，但他們內心對真理有著狂熱的追求。",
+        mission: "建築師往往將生活視為一盤巨大的棋局。對他們來說，沒有什麼是不可能的，只要有足夠的智慧和時間。他們致力於解決複雜問題，將創新理念轉化為切實可行的長期策略。他們極度厭惡低效率或盲目跟從既定規則，這使得他們經常成為打破常規、推動變革的關鍵力量。他們的人生使命在於「優化這個世界」。",
+        relationships: "在人際關係中，INTJ 重視智力上的匹敵勝過情感的撫慰。他們可能會顯得難以接近，但這只是因為他們在篩選值得投入時間的靈魂伴侶。一旦他們認定了某人，便會展現出極高的忠誠度。他們不擅長處理情緒化的衝突，但會用最實際的行動和解決方案來支持他們在乎的人。",
+        career: "系統工程師、企業策略師、科學家、數據分析師、高階主管。", 
+        warning: "小心過於傲慢與忽視他人情感。需學習接納不完美，並理解情感在人類決策與團隊合作中的重要性。" 
+      },
+      INTP: { 
+        name: "邏輯學家", 
+        shortDesc: "具備創新精神的發明家，對知識充滿難以抑制的渴望。",
+        quote: "從昨天學習，為今天而活，對明天抱有希望。最重要的是不要停止發問。",
+        quoteAuthor: "阿爾伯特·愛因斯坦",
+        description: "邏輯學家（INTP）以其出色的理論和無懈可擊的邏輯而自豪。他們喜歡發現宇宙和日常生活背後的潛在模式，如果有人指出他們的邏輯漏洞，他們不僅不會生氣，反而會感到興奮。他們腦中總是有源源不絕的點子和疑問，這讓他們看起來常常像是在沉思或發呆，但實際上他們的思想從未停歇。",
+        mission: "對 INTP 而言，宇宙就是一個需要被解開的巨大謎團。他們的使命是追求絕對的真理與客觀的理解，而不是世俗的成功或地位。他們喜歡突破傳統思維的框架，尋求創新的解決方案。當他們被允許在沒有嚴格時間限制和壓力的環境下自由探索時，他們往往能產出改變世界的驚人洞見。",
+        relationships: "INTP 在人際交往中通常隨和且包容，但當他們的信念或邏輯受到無理挑戰時，也會變得非常固執。他們不擅長提供情緒價值，比起安慰，他們更傾向幫朋友分析問題並提供解決方案。他們需要大量的獨處時間來思考，伴侶必須能理解並尊重他們對個人空間的需求。",
+        career: "軟體開發者、數學家、大學教授、系統分析師、哲學家。", 
+        warning: "避免過度沉迷於理論而脫離現實。有時過於追求完美邏輯會導致「分析癱瘓」，需加強將想法落地的執行力。" 
+      },
+      ENTJ: { 
+        name: "指揮官", 
+        shortDesc: "大膽、富有想像力且意志強大的領導者，總能找到或創造解決之道。",
+        quote: "你的時間有限，所以不要浪費時間過別人的生活。",
+        quoteAuthor: "史蒂夫·賈伯斯",
+        description: "指揮官（ENTJ）是天生的領導者。這種人格類型的人充滿魅力和自信，他們散發的權威性能夠召集大家為著一個共同的目標努力。與其他感性的人格不同，ENTJ 會用冷酷的理性來驅動自己，利用他們強大的驅動力、堅定的意志和敏銳的思維，來達到他們為自己設定的任何目標。",
+        mission: "他們的使命是成就偉大，並將混亂轉化為結構與效率。ENTJ 喜歡挑戰，他們堅信只要有足夠的決心，就沒有無法克服的障礙。他們在推動大型專案或組織變革時最能發揮潛力。他們不怕做出艱難的決定，並且總是目光長遠，追求卓越的成就與實質的影響力。",
+        relationships: "在感情與人際關係中，ENTJ 同樣扮演主導角色。他們喜歡有成長性、能共同進步的伴侶。然而，他們在處理他人情感（甚至自己情感）時可能會顯得笨拙且不耐煩。如果他們認為某人的觀點不合邏輯或效率低下，他們可能會毫不留情地指出，這有時會傷害到身邊的人。",
+        career: "企業高管、律師、創業家、管理顧問、專案總監。", 
+        warning: "容易給人壓迫感與無情冷酷的印象。需學習傾聽、展現同理心，並承認情感也是人類動機的重要組成部分。" 
+      },
+      ENTP: { 
+        name: "辯論家", 
+        shortDesc: "聰明好奇的思想者，無法抗拒任何智力上的挑戰。",
+        quote: "危險的不是我們把目標定得太高而沒有達到，而是我們把目標定得太低而達到了。",
+        quoteAuthor: "米開朗基羅",
+        description: "辯論家（ENTP）是終極的魔鬼代言人，他們樂於撕裂論點和信念，並將其攤在陽光下檢視。對他們來說，沒有什麼比一場激烈的智力辯論更有趣了。他們思維敏捷、博學多聞，擅長將截然不同的想法連接起來。他們並不一定想要引起衝突，只是想透過辯論來探索問題的各個面向。",
+        mission: "ENTP 的使命是打破現狀、挑戰傳統思維。他們討厭例行公事和被規則束縛。他們最大的價值在於提供創新的視野和突破性的想法。他們是優秀的腦力激盪者，總能看出事物「還能變成什麼樣子」，而不是只看到事物「現在是什麼樣子」。",
+        relationships: "與 ENTP 相處永遠不會無聊，他們幽默、機智且充滿活力。然而，他們有時為了辯論而辯論的習慣，會讓尋求和諧的人感到疲憊。他們需要能與之在智力上交鋒、並且不會將辯論視為個人攻擊的伴侶與朋友。在感情中，他們追求不斷的成長和心靈的刺激。",
+        career: "行銷創意、顧問、發明家、律師、政治家、企業家。", 
+        warning: "喜歡爭辯可能傷害和氣，且點子多但缺乏耐心收尾。應學會有時候「放手」，並培養將單一專案貫徹始終的毅力。" 
+      },
+      INFJ: { 
+        name: "提倡者", 
+        shortDesc: "沉靜有遠見的人，通常是鼓舞人心且從不會感到疲倦的理想主義者。",
+        quote: "以人應然之態待之，方能助其臻於所能之境。",
+        quoteAuthor: "約翰·沃夫岡·馮·歌德",
+        description: "INFJ 型人格既理想主義，又堅守原則，不甘隨波逐流、虛度此生，而是一心渴望挺身而出，有所作為。對於這些心懷大愛的人而言，成功並非金錢與地位的堆砌，而是源於追求自我實現、助力他人，成為世間的一股浩然正氣。雖然他們懷抱遠大的目標，但這並不表示提倡者只是空想的夢想家。他們非常重視誠實與正直，且極少滿足於做違背自己原則的事。",
+        mission: "由於他們擁有豐富的內心世界與強烈的使命感，有時很難與周遭環境完全契合。提倡者通常對不公感到憤慨，並將利他主義視為核心價值。他們擁有豐富的創造力、想像力和敏銳度，足以推動他人、引導社會朝更具同理心的方向發展。對 INFJ 而言，能讓他人生活向好轉變，便是最大的鼓舞。",
+        relationships: "INFJ 極為珍視與他人間深厚且真摯的關係。真正了解他人並獲對方同等的了解，堪稱至樂之事。只要關係真誠，哪怕只有少數密友，也足以讓他們的內心富足。他們體貼且常常先人後己，為周圍投入大量能量；若感覺好意未被珍視，可能會感到相當沮喪或受傷，且對各種批評十分敏感。",
+        career: "心理諮商師、作家、非營利組織領袖、人資專家、教育家。", 
+        warning: "容易把問題一肩扛起導致身心耗竭。在持續照顧別人的同時，偶爾也要停下腳步關懷自己，設定健康的心理界線。" 
+      },
+      INFP: { 
+        name: "調停者", 
+        shortDesc: "詩意、善良且無私，總是渴望在最壞的人事物中尋找美好。",
+        quote: "不是所有流浪的人都迷失了方向。",
+        quoteAuthor: "J.R.R. 托爾金",
+        description: "調停者（INFP）是真正的理想主義者，他們在表面看似冷靜、內向，甚至害羞，但他們的內心卻燃燒著熱情的光芒。他們由深刻的個人價值觀引導，以內在的道德指南針為決策依據。他們對藝術、自然和人類情感有著極其細膩的感知能力，經常透過寫作、音樂或其他藝術形式來表達自我。",
+        mission: "INFP 的人生使命是尋找生命的深刻意義。他們極力想要理解自己是誰，以及如何能為人類服務。他們致力於弭平人與人之間的隔閡，帶來治癒與理解。他們對弱勢群體抱有強烈的同情心，並渴望創造一個更具包容性、更有溫度的世界。",
+        relationships: "在人際交往中，INFP 尋求靈魂深處的共鳴。他們不喜歡膚淺的閒聊，而是渴望探討夢想、價值觀和宇宙的奧秘。由於他們將感情藏得很深，只有極少數的知己能真正走進他們的世界。一旦建立了連結，他們將是極度忠誠且充滿愛心的伴侶，但有時會因為將對方過度理想化而感到失落。",
+        career: "作家、藝術家、心理諮商師、人力資源、內容創作者。", 
+        warning: "過於理想化容易對現實失望，且面對衝突時容易選擇退縮。需建立落地執行的習慣，並學習勇敢面對必要的人際摩擦。" 
+      },
+      ENFJ: { 
+        name: "主人公", 
+        shortDesc: "充滿魅力與啟發性的領導者，總能讓聽眾為之傾倒。",
+        quote: "當你讓別人發光時，你自己也會跟著發光。",
+        quoteAuthor: "佚名",
+        description: "主人公（ENFJ）是天生的領導者和教育者，充滿熱情和個人魅力。他們佔人口的比例不大，但經常能在政界、教練或教師的職位上看到他們的身影。他們有一種與生俱來的能力，能夠洞察他人的動機與潛力，並樂於引導大家團結起來，共同為改善社會而努力。",
+        mission: "他們的使命是啟發並幫助他人發揮全部潛能。ENFJ 堅信人性的光輝，他們為他人的成功感到由衷的喜悅。他們經常將別人的問題視為己任，致力於建立強大的社群連結，推動積極的社會變革。他們希望自己的存在能讓身邊的人感到溫暖與充滿希望。",
+        relationships: "ENFJ 是朋友和伴侶的強大後盾，他們真誠地關心別人，總能敏銳察覺到他人的情緒變化。他們極度渴望和諧，因此有時會過度妥協或隱藏自己的真實需求以取悅他人。他們需要被感激與認可，如果他們的付出被視為理所當然，他們會感到深深的受傷。",
+        career: "公關經理、教師、人資總監、政治家、銷售主管、活動策劃。", 
+        warning: "過度關注他人需求而忽略自我，容易承擔過多不屬於自己的責任。需留給自己喘息空間，並學會說「不」。" 
+      },
+      ENFP: { 
+        name: "競選者", 
+        shortDesc: "熱情、富有創意且熱愛社交，總是能找到微笑的理由。",
+        quote: "不要因為它結束而哭泣，要因為它發生而微笑。",
+        quoteAuthor: "蘇斯博士",
+        description: "競選者（ENFP）是真正的自由靈魂，他們常常是聚會上的焦點，但與追求當下刺激的人格不同，他們更享受與他人建立深厚的情感與社會聯繫。他們迷人、獨立、精力充沛且充滿同情心。對他們來說，生活是一張錯綜複雜的網，所有事物都相互連結，他們試圖用好奇心和想像力來解讀這些連結。",
+        mission: "ENFP 的使命是探索世界的無限可能，並激發他人的熱情。他們無法忍受被困在無聊、重複的例行公事中。他們渴望創新，並希望透過自己的創造力和樂觀精神，為世界帶來正面的改變和啟發。他們是優秀的倡導者，總能用語言和情感打動人心。",
+        relationships: "在關係中，ENFP 熱情洋溢且極具奉獻精神。他們喜歡探索伴侶的內心世界，並為關係注入源源不絕的驚喜與浪漫。然而，由於他們總是看到「其他的可能性」，有時會對長期的承諾感到不安。他們需要一個既能給予他們自由，又能提供穩定情感支持的伴侶。",
+        career: "活動策劃、記者、品牌大使、藝術總監、心理學家。", 
+        warning: "專注力容易分散，喜歡開頭但討厭收尾。應練習將一個項目徹底完成，並學會在枯燥的日常中找到紀律。" 
+      },
+      ISTJ: { 
+        name: "物流師", 
+        shortDesc: "注重實用與事實，可靠性極高的基石型人物。",
+        quote: "細節決定成敗。",
+        quoteAuthor: "佚名",
+        description: "物流師（ISTJ）是數量最多的人格類型之一，他們是社會的穩定力量。他們極度務實、具備強烈的責任感，並以一絲不苟的態度對待每一項任務。他們相信邏輯、秩序和傳統，做事按部就班，從不依賴運氣。對他們來說，承諾重於泰山，說到就一定會做到。",
+        mission: "ISTJ 的使命是維護秩序、確保社會和家庭的齒輪平穩運轉。他們不會追求華而不實的創新，而是致力於用最可靠、最有效率的方式完成工作。他們是規則的守護者，堅信建立並遵守標準是防止混亂的唯一途徑。他們在任何組織中都是不可或缺的中流砥柱。",
+        relationships: "在人際關係中，ISTJ 可能不夠浪漫或感性，但他們絕對是最忠誠、最可靠的伴侶。他們用實際行動（如修好壞掉的家電、做好財務規劃）來表達愛意。他們不喜歡情感上的戲劇化，更偏好穩定、可預測的關係。有時他們會顯得過於生硬，需要學習理解伴侶的情感需求。",
+        career: "會計師、公務員、專案經理、軍警人員、金融分析師。", 
+        warning: "過於固執於規則，有時會顯得不近人情。需學會在變動中保持彈性，並適時接納他人不同的做事方式。" 
+      },
+      ISFJ: { 
+        name: "守衛者", 
+        shortDesc: "極度奉獻的保護者，隨時準備保護且照顧所愛之人。",
+        quote: "愛不是我們所做的事，而是我們做事的初衷。",
+        quoteAuthor: "德蕾莎修女",
+        description: "守衛者（ISFJ）是一個非常獨特的人格：他們雖然內向，卻有著極佳的社交技巧與人際關係；雖然保守，卻對改變抱持開放態度，只要能保護到他們關心的人。他們溫暖、平易近人，且擁有一種安靜的力量。他們是真正的利他主義者，以超越自我的善意來回報他人的善意。",
+        mission: "ISFJ 的使命是照顧並守護他們身邊的每一個人。他們在醫療、教育或社會服務等領域尤為出色，因為他們天生具有敏銳的觀察力，能記住別人的喜好與需求，並默默提供幫助。他們不追求聚光燈，最大的成就感來自於看到家人和朋友健康、快樂與安全。",
+        relationships: "在感情與友情中，ISFJ 是極致的付出者。他們會無微不至地照顧伴侶，並將家庭和諧放在首位。然而，他們習慣將自己的需求壓抑在心底，害怕提出要求會造成別人的負擔。這往往會導致他們在關係中感到被利用或耗竭。他們需要伴侶主動看見並回饋他們的付出。",
+        career: "護理師、社工、行政主管、教師、客服人員。", 
+        warning: "習慣隱忍委屈，不懂得拒絕。需學習勇敢表達自己的不滿和需求，要知道照顧好自己才能更好地照顧別人。" 
+      },
+      ESTJ: { 
+        name: "總經理", 
+        shortDesc: "出色的管理者，無與倫比地管理與支配事物。",
+        quote: "良好的秩序是所有事物的基礎。",
+        quoteAuthor: "埃德蒙·伯克",
+        description: "總經理（ESTJ）是傳統和秩序的代表。他們利用對是非對錯的清晰判斷力，將家庭和社區團結在一起。他們重視誠實、奉獻和尊嚴，並以身作則，拒絕懶惰和作弊。如果有人說應該朝某個方向走，ESTJ 會是那個開闢道路、制定計畫並確保每個人都跟上腳步的人。",
+        mission: "ESTJ 的核心動力在於組織與執行。他們的使命是將混亂無序的狀態轉化為結構化的高效系統。他們堅信透過努力工作和明確的規則，團隊可以克服任何困難。他們在企業管理、政治或社區組織中經常擔任發號施令的角色，致力於創造實質、可衡量的成果。",
+        relationships: "在關係中，ESTJ 直接、誠實且講求實際。他們不喜歡猜心遊戲，更喜歡明確的溝通。他們是非常負責的伴侶和父母，致力於為家庭提供穩定的物質與結構基礎。但他們有時會將對工作的嚴苛標準帶入家庭，顯得過於專橫或缺乏情感上的溫柔與包容。",
+        career: "營運總監、警官、金融經理、律師、法官。", 
+        warning: "可能顯得死板、掌控慾強且不容異見。應給予下屬與伴侶更多信任與空間，學會傾聽與自己不同的意見。" 
+      },
+      ESFJ: { 
+        name: "執政官", 
+        shortDesc: "充滿愛心、極受歡迎並樂於助人，永遠是聚會的靈魂。",
+        quote: "互相幫助是人類生存的第一法則。",
+        quoteAuthor: "佚名",
+        description: "執政官（ESFJ）是極受歡迎的人格類型。在高中時期，他們通常是啦啦隊長或四分衛——定調氣氛、備受矚目，並帶領團隊走向勝利。即使到了成年，他們依然熱衷於支持朋友和親人。他們對周遭發生的事瞭如指掌，並總是盡力確保每個人都感到開心和被包容。",
+        mission: "ESFJ 的使命是創造和諧與社群連結。他們對於建立社會秩序與傳統有著強烈的責任感，致力於舉辦聚會、維護家庭儀式以及關懷社區中的每一個人。他們的行動力極強，當朋友遇到困難時，他們不僅會給予擁抱，還會端著熱湯出現在你家門口。",
+        relationships: "在人際關係中，ESFJ 是極度溫暖且忠誠的。他們需要大量的正面回饋和社會認同來確認自己的價值。他們對他人的感受極為敏感，但也因此容易因為別人的無心之言而受傷。他們是非常傳統的伴侶，追求長久、穩定且充滿家庭溫馨氛圍的關係。",
+        career: "護理人員、客服主管、活動主辦人、社工、公關。", 
+        warning: "過度依賴外界的認同與讚美，有時會將自己的價值觀強加於人。需培養自我肯定的內在力量，並接受世界的多樣性。" 
+      },
+      ISTP: { 
+        name: "鑑賞家", 
+        shortDesc: "大膽實用的實驗者，精通各類工具的機械大師。",
+        quote: "我只相信我親眼所見、親手觸摸到的。",
+        quoteAuthor: "佚名",
+        description: "鑑賞家（ISTP）喜歡用雙手和眼睛探索世界，透過冷靜的理性和活躍的好奇心去感知周遭事物。他們是天生的製造者，喜歡拆解事物再將其組裝得更好。對他們來說，最大的樂趣在於實踐與動手做。他們通常沉默寡言，但一旦遇到他們感興趣的機械或實體問題，便會展現出驚人的專注力。",
+        mission: "ISTP 的使命在於掌握物理世界的運作規律。他們追求技術的精進與工具的掌控，無論是修理引擎、編寫程式碼還是極限運動。他們討厭過多的理論和束縛，渴望自由自在地應對眼前的挑戰。在危機時刻，他們往往是那個能冷靜找出實用解決方案的人。",
+        relationships: "在交友和戀愛中，ISTP 隨性且不喜歡被束縛。他們很少主動表露情感，比起說「我愛你」，他們更傾向於幫你修好腳踏車。他們給予伴侶極大的自由，但也需要對方回報同等的個人空間。如果伴侶試圖用強烈的情感或嚴格的計畫來綁住他們，他們很容易會選擇逃離。",
+        career: "機械工程師、數據安全專家、飛行員、技師、消防員。", 
+        warning: "容易對長期承諾或無趣的專案感到厭倦而半途而廢。需學習深耕一段關係或事業，並發展表達情感的能力。" 
+      },
+      ISFP: { 
+        name: "探險家", 
+        shortDesc: "靈活迷人的藝術家，時刻準備探索並體驗新事物。",
+        quote: "藝術洗刷了靈魂中日常生活的灰塵。",
+        quoteAuthor: "巴勃羅·畢卡索",
+        description: "探險家（ISFP）是真正的藝術家，雖然他們未必在畫布上作畫，但他們的生活方式本身就是一種藝術。他們喜歡打破傳統的期望，透過美學、行為和選擇來展現自我。他們活在當下，對周遭的聲音、顏色和質地有著極其敏銳的感知力，喜歡將日常生活轉化為充滿美感的體驗。",
+        mission: "ISFP 的使命是充分體驗生命的美好與真實。他們不喜歡被宏大的未來計畫或僵化的規則所束縛，而是追隨內心的熱情與感覺。他們致力於保持真實的自我，並以寬容不評判的態度對待他人。他們的存在往往能為周圍帶來一種寧靜、和諧且充滿美感的氛圍。",
+        relationships: "在人際交往中，ISFP 溫柔、安靜且極具包容心。他們不喜歡衝突，通常會選擇默默退讓或以和為貴。在感情中，他們是浪漫且充滿驚喜的伴侶，喜歡用貼心的小舉動來表達愛意。然而，由於他們過於關注當下，有時會逃避解決關係中深層的長期問題。",
+        career: "設計師、攝影師、自由工作者、藝術家、美容師。", 
+        warning: "面對衝突容易退縮，且往往缺乏長遠的財務或職涯規劃。需建立應對壓力的健康機制，並學會為未來做打算。" 
+      },
+      ESTP: { 
+        name: "企業家", 
+        shortDesc: "聰明精力充沛，總是喜歡享受處於邊緣的刺激生活。",
+        quote: "生活要麼是一場大膽的冒險，要麼什麼都不是。",
+        quoteAuthor: "海倫·凱勒",
+        description: "企業家（ESTP）總是對周遭環境有著最直接的影響。如果你在派對上看到有人在人群中穿梭，引得大家陣陣笑聲，那很可能就是 ESTP。他們不喜歡冗長的理論探討，而是喜歡立刻投入行動。他們是規則的破壞者，相信與其坐著空想，不如直接去嘗試，即使犯錯也能隨機應變。",
+        mission: "ESTP 的使命是在當下的挑戰中獲勝。他們是天生的風險承擔者和危機處理專家，最擅長在瞬息萬變的高壓環境中找出捷徑和機會。無論是在商場上的談判、還是體育競技中的衝刺，他們都渴望感受到腎上腺素的飆升和取得實質成果的快感。",
+        relationships: "在關係中，ESTP 充滿樂趣、刺激且極具魅力。他們會帶伴侶去體驗各種新鮮事物，讓生活絕不無聊。但他們同樣也是注意力短暫的群體，如果關係變得過於沉重或平淡，他們可能會迅速失去興趣。他們需要學會如何在平淡的日常中維持情感的深度與承諾。",
+        career: "銷售主管、創業家、體育教練、談判代表、行銷人員。", 
+        warning: "行事容易衝動不顧後果，追求短期刺激而忽略長期風險。做重大決定前需三思，並培養對他人情感的耐心。" 
+      },
+      ESFP: { 
+        name: "表演者", 
+        shortDesc: "自發精力充沛且熱情的藝人，生活在他們身邊永遠不會無聊。",
+        quote: "不要等待風暴過去，要學會在雨中跳舞。",
+        quoteAuthor: "佚名",
+        description: "表演者（ESFP）是天生的藝人，他們熱愛聚光燈，而世界就是他們的舞台。他們擁有極強的觀察力和人際互動能力，總能輕易察覺別人的情緒並帶來歡樂。他們不喜歡被困在無聊的規則中，對於美酒、佳餚、華服與熱鬧的派對有著天然的熱愛，他們是享受當下的終極代表。",
+        mission: "ESFP 的人生使命就是讓自己和身邊的人都感到快樂。他們是最棒的氣氛製造者，致力於驅散生活中的陰霾。他們不僅愛玩，也擁有極強的實踐同理心，當朋友難過時，他們往往是第一個跳出來提供陪伴和實質幫助的人，用他們滿滿的正能量去感染世界。",
+        relationships: "在人際關係中，ESFP 極度渴望陪伴與互動。他們無法忍受長期的孤獨，需要與他人共享生活的點滴。他們是充滿愛意、不吝嗇表達的伴侶。然而，他們極度討厭衝突和負面情緒，有時會為了粉飾太平而刻意忽略關係中必須面對的嚴肅問題。",
+        career: "演員、公關人員、旅遊領隊、活動企劃、時裝設計師。", 
+        warning: "容易沉溺於當下的享樂而逃避枯燥但必要的責任（如理財、健康規劃）。需培養延遲滿足的能力與長遠規劃的習慣。" 
+      }
     };
 
     // ==========================================
-    // 3. 狀態管理 (useReducer)
+    // 3. 狀態管理與洗牌邏輯
     // ==========================================
+    function shuffleArray(array) {
+      const newArr = [...array];
+      for (let i = newArr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+      }
+      return newArr;
+    }
+
     const initialState = {
-      status: 'start', 
+      status: 'start', // 'start' | 'quiz' | 'result' | 'catalog' | 'typeDetail'
       answers: {},      
       currentPage: 0,
+      questions: QUESTIONS, // Stores the potentially shuffled order
+      selectedType: null,
     };
 
     function quizReducer(state, action) {
       switch (action.type) {
         case 'LOAD_SAVED':
-          return { ...action.payload };
+          return { questions: QUESTIONS, selectedType: null, ...action.payload };
         case 'START':
-          return { ...state, status: 'quiz', currentPage: 0, answers: {} };
+          return { ...state, status: 'quiz', currentPage: 0, answers: {}, questions: shuffleArray(QUESTIONS) };
         case 'CONTINUE':
           return { ...state, status: 'quiz' };
+        case 'GO_HOME':
+          return { ...state, status: 'start' };
+        case 'VIEW_CATALOG':
+          return { ...state, status: 'catalog' };
+        case 'VIEW_TYPE_DETAIL':
+          return { ...state, status: 'typeDetail', selectedType: action.payload };
         case 'ANSWER':
           return {
             ...state,
@@ -198,7 +379,7 @@
         case 'SUBMIT':
           return { ...state, status: 'result' };
         case 'RESET':
-          return { status: 'start', answers: {}, currentPage: 0 };
+          return { status: 'start', answers: {}, currentPage: 0, questions: QUESTIONS, selectedType: null };
         default:
           return state;
       }
@@ -281,6 +462,7 @@
     function App() {
       const [state, dispatch] = useReducer(quizReducer, initialState);
 
+      // Restore session
       useEffect(() => {
         const saved = localStorage.getItem('mbti_progress');
         if (saved) {
@@ -295,6 +477,7 @@
         }
       }, []);
 
+      // Auto-save (exclude results page)
       useEffect(() => {
         if (state.status !== 'result') {
           localStorage.setItem('mbti_progress', JSON.stringify(state));
@@ -303,11 +486,13 @@
         }
       }, [state]);
 
+      // Calculate logic
       const results = useMemo(() => {
         if (state.status !== 'result') return null;
 
         let scores = { E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 };
         
+        // We use the original QUESTIONS to calculate regardless of shuffle order
         QUESTIONS.forEach(q => {
           const ans = state.answers[q.id] || 3; 
           const valPositive = ans;
@@ -346,7 +531,10 @@
         };
       }, [state.status, state.answers]);
 
+
+      // --- View 1: Start Screen ---
       if (state.status === 'start') {
+        const hasAnswers = Object.keys(state.answers).length > 0;
         return (
           <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 text-slate-800 transition-colors duration-500">
             <div className="max-w-2xl w-full bg-white/60 backdrop-blur-xl border border-white/40 rounded-3xl p-8 sm:p-12 shadow-2xl text-center animate-in zoom-in-95 duration-500">
@@ -356,47 +544,57 @@
               <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">
                 MBTI 深度人格解析
               </h1>
-              <p className="text-lg text-slate-600 mb-8 leading-relaxed">
+              <p className="text-lg text-slate-600 mb-10 leading-relaxed">
                 透過 88 題專業量表，精準剖析你的核心人格特質、潛力優勢與職涯發展。測驗過程將自動儲存，無須擔心進度遺失。
               </p>
               
-              {Object.keys(state.answers).length > 0 && state.currentPage > 0 ? (
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="flex flex-col gap-4 items-center">
+                {hasAnswers ? (
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center w-full">
+                    <button 
+                      onClick={() => dispatch({ type: 'START' })}
+                      className="px-8 py-4 rounded-xl font-bold bg-white text-indigo-600 hover:bg-slate-50 transition-all shadow-md active:scale-95 border border-indigo-100 w-full sm:w-auto"
+                    >
+                      重新開始
+                    </button>
+                    <button 
+                      onClick={() => dispatch({ type: 'CONTINUE' })}
+                      className="px-8 py-4 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-all shadow-md active:scale-95 border border-transparent w-full sm:w-auto"
+                    >
+                      繼續測驗
+                    </button>
+                  </div>
+                ) : (
                   <button 
                     onClick={() => dispatch({ type: 'START' })}
-                    className="px-8 py-4 rounded-xl font-bold bg-white text-indigo-600 hover:bg-slate-50 transition-all shadow-md active:scale-95 border border-indigo-100"
+                    className="group relative inline-flex items-center justify-center px-10 py-4 font-bold text-white transition-all duration-300 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl hover:from-indigo-500 hover:to-purple-500 hover:shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-1 active:scale-95 overflow-hidden w-full sm:w-auto"
                   >
-                    重新開始
+                    <span className="relative flex items-center gap-2">
+                      開始測驗 <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </span>
                   </button>
-                  <button 
-                    onClick={() => dispatch({ type: 'CONTINUE' })}
-                    className="px-8 py-4 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-all shadow-md active:scale-95 border border-transparent"
-                  >
-                    繼續測驗
-                  </button>
-                </div>
-              ) : (
+                )}
+
                 <button 
-                  onClick={() => dispatch({ type: 'START' })}
-                  className="group relative inline-flex items-center justify-center px-10 py-4 font-bold text-white transition-all duration-300 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl hover:from-indigo-500 hover:to-purple-500 hover:shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-1 active:scale-95 overflow-hidden"
+                  onClick={() => dispatch({ type: 'VIEW_CATALOG' })}
+                  className="flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all active:scale-95 w-full sm:w-auto mt-2"
                 >
-                  <span className="relative flex items-center gap-2">
-                    開始測驗 <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                  </span>
+                  <Users className="w-5 h-5" /> 人格類型總覽
                 </button>
-              )}
+              </div>
               
-              <div className="mt-8 text-sm text-slate-500 flex items-center justify-center gap-2">
-                <AlertCircle className="w-4 h-4" /> 預計耗時：10 - 15 分鐘
+              <div className="mt-10 text-sm text-slate-500 flex items-center justify-center gap-2">
+                <AlertCircle className="w-4 h-4" /> 每次測驗題目順序皆會隨機洗牌
               </div>
             </div>
           </div>
         );
       }
 
+      // --- View 2: Quiz Screen ---
       if (state.status === 'quiz') {
         const startIndex = state.currentPage * QUESTIONS_PER_PAGE;
-        const currentQuestions = QUESTIONS.slice(startIndex, startIndex + QUESTIONS_PER_PAGE);
+        const currentQuestions = state.questions.slice(startIndex, startIndex + QUESTIONS_PER_PAGE);
         const isFirstPage = state.currentPage === 0;
         const isLastPage = state.currentPage === TOTAL_PAGES - 1;
         
@@ -406,6 +604,19 @@
         return (
           <div className="min-h-screen bg-slate-50 text-slate-800 py-8 px-4 transition-colors duration-500">
             <div className="max-w-3xl mx-auto">
+              
+              {/* Header Navigation */}
+              <div className="flex justify-between items-center mb-6 px-2">
+                <button 
+                  onClick={() => dispatch({type: 'GO_HOME'})} 
+                  className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors font-semibold"
+                >
+                  <HomeIcon className="w-5 h-5"/> 回首頁
+                </button>
+                <span className="text-slate-400 font-medium text-sm">MBTI 深度測試</span>
+              </div>
+
+              {/* Progress Bar */}
               <div className="bg-white/80 backdrop-blur-md rounded-2xl p-4 shadow-sm mb-6 sticky top-4 z-10 border border-slate-200">
                 <div className="flex justify-between items-center mb-2 text-sm font-semibold">
                   <span className="text-indigo-600">完成度</span>
@@ -419,6 +630,7 @@
                 </div>
               </div>
 
+              {/* Questions List */}
               <div className="space-y-6">
                 {currentQuestions.map((q, idx) => (
                   <div 
@@ -427,7 +639,7 @@
                     style={{ animationDelay: `${idx * 100}ms` }}
                   >
                     <h3 className="text-lg sm:text-xl font-bold mb-6 text-slate-800 leading-snug">
-                      <span className="text-indigo-300 mr-2 text-sm">Q{q.id}.</span>
+                      <span className="text-indigo-300 mr-2 text-sm">Q.</span>
                       {q.text}
                     </h3>
                     <RatingScale 
@@ -438,6 +650,7 @@
                 ))}
               </div>
 
+              {/* Bottom Navigation */}
               <div className="mt-8 flex justify-between items-center bg-white/50 backdrop-blur rounded-2xl p-4 border border-slate-200">
                 <button
                   onClick={() => dispatch({ type: 'PREV_PAGE' })}
@@ -451,7 +664,7 @@
                   <ChevronLeft className="w-5 h-5" /> 上一頁
                 </button>
                 
-                <div className="text-sm font-medium text-slate-500">
+                <div className="text-sm font-medium text-slate-500 hidden sm:block">
                   頁面 {state.currentPage + 1} / {TOTAL_PAGES}
                 </div>
 
@@ -492,6 +705,7 @@
         );
       }
 
+      // --- View 3: Result Screen ---
       if (state.status === 'result' && results) {
         const { type, data, pct } = results;
 
@@ -499,6 +713,12 @@
           <div className="min-h-screen bg-slate-50 py-12 px-4 transition-colors duration-500">
             <div className="max-w-4xl mx-auto space-y-8">
               
+              <div className="flex justify-start">
+                <button onClick={() => dispatch({type: 'GO_HOME'})} className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors font-medium">
+                  <HomeIcon className="w-5 h-5"/> 回首頁
+                </button>
+              </div>
+
               <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-8 sm:p-12 shadow-2xl border border-white/50 text-center animate-in zoom-in-95 duration-700">
                 <h2 className="text-xl sm:text-2xl text-slate-500 font-bold tracking-widest uppercase mb-2">你的性格類型是</h2>
                 <div className="text-6xl sm:text-8xl font-extrabold mb-4 bg-clip-text text-transparent bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
@@ -517,7 +737,6 @@
                   <h3 className="text-xl font-bold mb-8 flex items-center gap-2 text-slate-800">
                      <ActivityIcon /> 特質光譜分析
                   </h3>
-                  
                   <ResultBar labelLeft="外向 (E)" labelRight="內向 (I)" percentLeft={pct.E} colorClass="bg-blue-500" />
                   <ResultBar labelLeft="實感 (S)" labelRight="直覺 (N)" percentLeft={pct.S} colorClass="bg-amber-500" />
                   <ResultBar labelLeft="思考 (T)" labelRight="情感 (F)" percentLeft={pct.T} colorClass="bg-emerald-500" />
@@ -533,7 +752,6 @@
                       {data.career}
                     </p>
                   </div>
-
                   <div className="bg-gradient-to-br from-rose-50 to-orange-50 rounded-3xl p-8 shadow-md border border-rose-100">
                     <h3 className="text-lg font-bold mb-3 flex items-center gap-2 text-rose-800">
                       <Target className="w-5 h-5" /> 發展警示與建議
@@ -545,13 +763,151 @@
                 </div>
               </div>
 
-              <div className="text-center pt-8 animate-in zoom-in-95 duration-1000 delay-500 fill-mode-both">
+              <div className="flex justify-center gap-4 pt-8 animate-in zoom-in-95 duration-1000 delay-500 fill-mode-both">
                 <button
-                  onClick={() => dispatch({ type: 'RESET' })}
-                  className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-bold bg-white text-slate-700 shadow-lg hover:shadow-xl active:scale-95 transition-all border border-slate-200"
+                  onClick={() => dispatch({ type: 'START' })}
+                  className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-bold bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 active:scale-95 transition-all"
                 >
                   <RotateCcw className="w-5 h-5" /> 重新測驗
                 </button>
+              </div>
+
+            </div>
+          </div>
+        );
+      }
+
+      // --- View 4: Personality Types Catalog ---
+      if (state.status === 'catalog') {
+        return (
+          <div className="min-h-screen bg-slate-50 py-8 px-4 transition-colors duration-500">
+            <div className="max-w-4xl mx-auto space-y-8">
+              
+              <button onClick={() => dispatch({type: 'GO_HOME'})} className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors font-medium">
+                <HomeIcon className="w-5 h-5"/> 回首頁
+              </button>
+
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-center text-slate-800 mb-8 animate-in slide-in-from-bottom-4 duration-500">16型人格總覽</h2>
+              
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+                {Object.entries(PERSONALITIES).map(([key, data], idx) => (
+                  <button 
+                    key={key}
+                    onClick={() => dispatch({type: 'VIEW_TYPE_DETAIL', payload: key})}
+                    className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 hover:border-indigo-400 hover:shadow-lg transition-all text-center group active:scale-95 animate-in zoom-in-95 fill-mode-both"
+                    style={{ animationDelay: `${idx * 50}ms` }}
+                  >
+                    <div className="text-2xl font-black text-indigo-600 group-hover:scale-110 transition-transform">{key}</div>
+                    <div className="text-sm font-medium text-slate-600 mt-2">{data.name}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // --- View 5: Personality Type Detail ---
+      if (state.status === 'typeDetail' && state.selectedType) {
+        const typeCode = state.selectedType;
+        const data = PERSONALITIES[typeCode];
+        return (
+          <div className="min-h-screen bg-slate-50 py-8 px-4 transition-colors duration-500">
+            <div className="max-w-4xl mx-auto space-y-8">
+              
+              <div className="flex gap-6 mb-4">
+                <button onClick={() => dispatch({type: 'VIEW_CATALOG'})} className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors font-medium">
+                  <ArrowLeft className="w-5 h-5"/> 返回列表
+                </button>
+                <button onClick={() => dispatch({type: 'GO_HOME'})} className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors font-medium">
+                  <HomeIcon className="w-5 h-5"/> 回首頁
+                </button>
+              </div>
+
+              {/* 頂部 Hero 區塊 */}
+              <div className="bg-white rounded-3xl p-8 sm:p-12 shadow-xl border border-slate-100 animate-in zoom-in-95 duration-500 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none select-none text-9xl font-black">
+                  {typeCode}
+                </div>
+                
+                <div className="text-center relative z-10 mb-10">
+                  <h2 className="text-xl sm:text-2xl text-indigo-500 font-bold tracking-widest uppercase mb-2">{typeCode} 人格</h2>
+                  <h1 className="text-4xl sm:text-6xl font-extrabold text-slate-800 mb-6">{data.name}</h1>
+                  <p className="text-lg sm:text-xl text-slate-600 font-medium max-w-2xl mx-auto">
+                    {data.shortDesc}
+                  </p>
+                </div>
+
+                {/* 名言佳句區塊 */}
+                <div className="bg-slate-50 rounded-2xl p-8 sm:p-10 mb-10 text-center relative max-w-3xl mx-auto border border-slate-100">
+                  <div className="text-6xl text-indigo-200 absolute -top-2 left-4 font-serif leading-none">"</div>
+                  <p className="text-lg sm:text-xl text-slate-700 italic relative z-10 mb-4 font-serif leading-relaxed">
+                    {data.quote}
+                  </p>
+                  <p className="text-slate-500 font-semibold">— {data.quoteAuthor}</p>
+                </div>
+
+                {/* 詳細內容區塊 */}
+                <div className="space-y-12 text-slate-700 leading-relaxed text-lg max-w-3xl mx-auto">
+                  <section>
+                    <p>{data.description}</p>
+                  </section>
+                  
+                  <section>
+                    <h3 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                      <Target className="w-6 h-6 text-indigo-500" /> 追尋使命
+                    </h3>
+                    <p>{data.mission}</p>
+                  </section>
+
+                  <section>
+                    <h3 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                      <Users className="w-6 h-6 text-rose-400" /> 人際交往與自我呵護
+                    </h3>
+                    <p>{data.relationships}</p>
+                  </section>
+                </div>
+              </div>
+
+              {/* 職涯與警示 (原有的兩格設計保留並優化) */}
+              <div className="grid md:grid-cols-2 gap-8 animate-in slide-in-from-bottom-8 duration-700 delay-150 fill-mode-both">
+                <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-3xl p-8 shadow-md border border-indigo-100">
+                  <h3 className="text-lg font-bold mb-3 flex items-center gap-2 text-indigo-800">
+                    <Compass className="w-5 h-5" /> 適合職涯發展
+                  </h3>
+                  <p className="text-slate-700 leading-relaxed font-medium">
+                    {data.career}
+                  </p>
+                </div>
+
+                <div className="bg-gradient-to-br from-rose-50 to-orange-50 rounded-3xl p-8 shadow-md border border-rose-100">
+                  <h3 className="text-lg font-bold mb-3 flex items-center gap-2 text-rose-800">
+                    <AlertCircle className="w-5 h-5" /> 發展警示與建議
+                  </h3>
+                  <p className="text-slate-700 leading-relaxed font-medium">
+                    {data.warning}
+                  </p>
+                </div>
+              </div>
+
+              {/* 底部行動呼籲 (CTA) */}
+              <div className="mt-12 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-3xl p-8 sm:p-12 text-center text-white shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-1000 delay-300 fill-mode-both">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                <div className="relative z-10">
+                  <h3 className="text-2xl sm:text-3xl font-bold mb-4">職場變革新起點，釋放你的無限潛力</h3>
+                  <p className="text-indigo-100 mb-8 max-w-2xl mx-auto text-lg">
+                    別再在職場上與自己的天性對抗。找到真正懂你思維方式的職涯指引，讓你看到全新改變。我們的進階職涯套組能協助你發掘最適合自己的職缺，善用你的獨特優勢，打造理想人生。
+                  </p>
+                  <button 
+                    onClick={() => {
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                      dispatch({ type: 'START' });
+                    }} 
+                    className="bg-white text-indigo-600 font-bold text-lg py-4 px-10 rounded-full shadow-lg hover:scale-105 hover:shadow-indigo-500/50 transition-all active:scale-95"
+                  >
+                    立刻體驗測驗
+                  </button>
+                </div>
               </div>
 
             </div>
