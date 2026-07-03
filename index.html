@@ -1,0 +1,550 @@
+import React, { useReducer, useEffect, useMemo } from 'react';
+import { 
+  ChevronRight, ChevronLeft, RotateCcw, CheckCircle2, 
+  BrainCircuit, Sparkles, AlertCircle, Compass, Target
+} from 'lucide-react';
+
+// ==========================================
+// 1. 完整資料庫：88題題庫 (22題/維度)
+// dim: 維度對應, dir: 1 代表正向(E/S/T/J), -1 代表反向(I/N/F/P)
+// ==========================================
+const QUESTIONS = [
+  // --- E/I 維度 (22題) ---
+  { id: 1, text: "在大型社交聚會中，我通常會主動與陌生人攀談。", dim: "EI", dir: 1 },
+  { id: 2, text: "經過一整天與人密集互動後，我會感到精疲力盡並需要獨處。", dim: "EI", dir: -1 },
+  { id: 3, text: "我喜歡成為眾人矚目的焦點。", dim: "EI", 1: 1 },
+  { id: 4, text: "我更喜歡與一兩個親密朋友深度交談，而不是參加大型派對。", dim: "EI", dir: -1 },
+  { id: 5, text: "在團隊討論中，我通常是第一個發表意見的人。", dim: "EI", dir: 1 },
+  { id: 6, text: "我習慣先在腦中整理好思緒，然後才開口表達。", dim: "EI", dir: -1 },
+  { id: 7, text: "與人交談能讓我獲得能量和靈感。", dim: "EI", dir: 1 },
+  { id: 8, text: "週末時，我更傾向待在家裡看書或追劇，而不是出門社交。", dim: "EI", dir: -1 },
+  { id: 9, text: "我很容易在陌生的環境中結交新朋友。", dim: "EI", dir: 1 },
+  { id: 10, text: "遇到問題時，我喜歡自己安靜地思考解決方案，而非找人討論。", dim: "EI", dir: -1 },
+  { id: 11, text: "我的交友圈非常廣泛，認識各式各樣的人。", dim: "EI", dir: 1 },
+  { id: 12, text: "我認為自己的私人空間非常神聖，不喜歡被打擾。", dim: "EI", dir: -1 },
+  { id: 13, text: "當辦公室或教室太安靜時，我會覺得有些不自在。", dim: "EI", dir: 1 },
+  { id: 14, text: "我傾向於隱藏自己的情緒，只對極少數人敞開心扉。", dim: "EI", dir: -1 },
+  { id: 15, text: "我說話通常比思考快，有時會脫口而出。", dim: "EI", dir: 1 },
+  { id: 16, text: "別人常形容我是一個安靜、深思熟慮的人。", dim: "EI", dir: -1 },
+  { id: 17, text: "我喜歡快節奏、充滿互動的工作環境。", dim: "EI", dir: 1 },
+  { id: 18, text: "比起打電話，我更喜歡用文字訊息溝通。", dim: "EI", dir: -1 },
+  { id: 19, text: "我很擅長在尷尬的氣氛中尋找話題破冰。", dim: "EI", dir: 1 },
+  { id: 20, text: "我通常是個好的傾聽者，而不是滔滔不絕的演說家。", dim: "EI", dir: -1 },
+  { id: 21, text: "如果長時間沒有與人接觸，我會感到焦慮和無聊。", dim: "EI", dir: 1 },
+  { id: 22, text: "我需要大量的獨處時間來「充電」。", dim: "EI", dir: -1 },
+
+  // --- S/N 維度 (22題) ---
+  { id: 23, text: "我比較喜歡關注具體的事實和細節，而不是抽象的理論。", dim: "SN", dir: 1 },
+  { id: 24, text: "我經常想像未來的各種可能性，有時會忽略當下。", dim: "SN", dir: -1 },
+  { id: 25, text: "我相信自己的直接經驗多於相信直覺或靈感。", dim: "SN", dir: 1 },
+  { id: 26, text: "我喜歡探討事物背後的深層意義和潛在模式。", dim: "SN", dir: -1 },
+  { id: 27, text: "在學習新事物時，我希望有明確的步驟和實用範例。", dim: "SN", dir: 1 },
+  { id: 28, text: "比起按部就班，我更喜歡從宏觀角度理解整體的概念。", dim: "SN", dir: -1 },
+  { id: 29, text: "別人常形容我是一個務實、腳踏實地的人。", dim: "SN", dir: 1 },
+  { id: 30, text: "我經常沉浸在自己的幻想或白日夢中。", dim: "SN", dir: -1 },
+  { id: 31, text: "我偏好閱讀提供實用資訊或真實事件的書籍/文章。", dim: "SN", dir: 1 },
+  { id: 32, text: "我對於哲學、宇宙或人類未來的議題充滿熱情。", dim: "SN", dir: -1 },
+  { id: 33, text: "在解決問題時，我依賴過去成功且被驗證過的方法。", dim: "SN", dir: 1 },
+  { id: 34, text: "我喜歡提出前所未有的創新點子，即使它們很難實現。", dim: "SN", dir: -1 },
+  { id: 35, text: "我對周遭環境的細微變化（如某人換了髮型、物品位置移動）很敏銳。", dim: "SN", dir: 1 },
+  { id: 36, text: "比起現實的限制，我更看重事物未來的潛力。", dim: "SN", dir: -1 },
+  { id: 37, text: "我說話通常直接了當，只描述事物表面的真實狀況。", dim: "SN", dir: 1 },
+  { id: 38, text: "我習慣使用隱喻或比喻來表達我的想法。", dim: "SN", dir: -1 },
+  { id: 39, text: "我認為常識和實務經驗是人生最重要的資產。", dim: "SN", dir: 1 },
+  { id: 40, text: "比起維持現狀，我更渴望改變和突破框架。", dim: "SN", dir: -1 },
+  { id: 41, text: "我做事喜歡有明確的指示和清晰的期待標準。", dim: "SN", dir: 1 },
+  { id: 42, text: "我享受那種靈光一閃、突然把所有線索串聯起來的感覺。", dim: "SN", dir: -1 },
+  { id: 43, text: "我通常是個注重當下、活在現實的人。", dim: "SN", dir: 1 },
+  { id: 44, text: "我時常覺得自己與周遭的人思考頻率不同。", dim: "SN", dir: -1 },
+
+  // --- T/F 維度 (22題) ---
+  { id: 45, text: "在做決定時，邏輯和客觀事實比個人情感更重要。", dim: "TF", dir: 1 },
+  { id: 46, text: "當朋友遇到困難，我通常先提供情感上的安慰，而非解決方案。", dim: "TF", dir: -1 },
+  { id: 47, text: "我認為指出別人的錯誤是在幫助他們，而非故意刁難。", dim: "TF", dir: 1 },
+  { id: 48, text: "我很怕因為自己的決定而傷害到別人的感受。", dim: "TF", dir: -1 },
+  { id: 49, text: "即使是殘酷的真相，也比善意的謊言來得好。", dim: "TF", dir: 1 },
+  { id: 50, text: "我很容易察覺並受到他人情緒氛圍的影響。", dim: "TF", dir: -1 },
+  { id: 51, text: "在團隊合作中，我更在乎任務是否有效率地完成。", dim: "TF", dir: 1 },
+  { id: 52, text: "在團隊合作中，我更在乎大家是否相處融洽。", dim: "TF", dir: -1 },
+  { id: 53, text: "我經常會分析一件事情的利弊得失才採取行動。", dim: "TF", dir: 1 },
+  { id: 54, text: "我做決定時，直覺和「這感覺對不對」佔了很大比重。", dim: "TF", dir: -1 },
+  { id: 55, text: "面對爭執，我能保持冷靜客觀，就事論事。", dim: "TF", dir: 1 },
+  { id: 56, text: "面對爭執，我會感到非常焦慮，只想趕快恢復和平。", dim: "TF", dir: -1 },
+  { id: 57, text: "我佩服那些能將私人感情與工作完全分開的人。", dim: "TF", dir: 1 },
+  { id: 58, text: "我認為同理心和善良是一個人最珍貴的特質。", dim: "TF", dir: -1 },
+  { id: 59, text: "當我不同意某個觀點時，我會直接提出質疑和辯論。", dim: "TF", dir: 1 },
+  { id: 60, text: "為了避免衝突，我通常會選擇妥協或保持沉默。", dim: "TF", dir: -1 },
+  { id: 61, text: "我習慣以公平和一致的原則來對待所有人。", dim: "TF", dir: 1 },
+  { id: 62, text: "我會根據每個人的特殊情況和需求給予不同的通融。", dim: "TF", dir: -1 },
+  { id: 63, text: "別人有時會認為我太過冷酷或不近人情。", dim: "TF", dir: 1 },
+  { id: 64, text: "別人有時會認為我太過感性或感情用事。", dim: "TF", dir: -1 },
+  { id: 65, text: "我擅長找出系統或論述中的邏輯漏洞。", dim: "TF", dir: 1 },
+  { id: 66, text: "我擅長理解別人的動機和未說出口的需求。", dim: "TF", dir: -1 },
+
+  // --- J/P 維度 (22題) ---
+  { id: 67, text: "出門旅行前，我會制定詳細的行程表並嚴格遵守。", dim: "JP", dir: 1 },
+  { id: 68, text: "我喜歡隨興所至的旅行，走到哪玩到哪。", dim: "JP", dir: -1 },
+  { id: 69, text: "我的辦公桌或房間通常保持得非常整潔有條理。", dim: "JP", dir: 1 },
+  { id: 70, text: "我能在看似凌亂的環境中輕易找到我需要的東西。", dim: "JP", dir: -1 },
+  { id: 71, text: "比起最後一刻趕工，我更喜歡提早完成任務以求心安。", dim: "JP", dir: 1 },
+  { id: 72, text: "在死線(Deadline)逼近時，我通常能發揮出最大的潛力和創意。", dim: "JP", dir: -1 },
+  { id: 73, text: "我喜歡事先做決定，這讓我感到生活在掌控之中。", dim: "JP", dir: 1 },
+  { id: 74, text: "我喜歡保留各種選擇的可能性，直到最後一刻才做決定。", dim: "JP", dir: -1 },
+  { id: 75, text: "遇到突發狀況打亂我的計畫時，我會感到非常焦躁。", dim: "JP", dir: 1 },
+  { id: 76, text: "我非常擅長適應突如其來的變化，並隨機應變。", dim: "JP", dir: -1 },
+  { id: 77, text: "我習慣使用待辦事項清單（To-Do List）來管理每一天。", dim: "JP", dir: 1 },
+  { id: 78, text: "我覺得太多的計畫和清單會限制我的自由。", dim: "JP", dir: -1 },
+  { id: 79, text: "工作就是工作，玩樂就是玩樂，兩者界線分明。", dim: "JP", dir: 1 },
+  { id: 80, text: "我常常在工作時融入娛樂，或是邊玩邊工作。", dim: "JP", dir: -1 },
+  { id: 81, text: "做事情要有始有終，一件事情完成後我才會開始下一件。", dim: "JP", dir: 1 },
+  { id: 82, text: "我經常同時開啟好幾個專案，但未必每個都能收尾。", dim: "JP", dir: -1 },
+  { id: 83, text: "我非常重視守時，遲到對我來說是難以接受的。", dim: "JP", dir: 1 },
+  { id: 84, text: "我對時間的概念比較彈性，偶爾遲到或延遲是正常的。", dim: "JP", dir: -1 },
+  { id: 85, text: "我喜歡規律且可預測的日常生活。", dim: "JP", dir: 1 },
+  { id: 86, text: "我討厭一成不變的生活，總是尋求新鮮刺激。", dim: "JP", dir: -1 },
+  { id: 87, text: "我通常是個注重結果的人，只要目標達成即可。", dim: "JP", dir: 1 },
+  { id: 88, text: "比起最終結果，我更享受過程中的探索和樂趣。", dim: "JP", dir: -1 },
+];
+
+// ==========================================
+// 2. 16型人格資料庫
+// ==========================================
+const PERSONALITIES = {
+  INTJ: { name: "建築師", traits: "想像力豐富且具戰略性", career: "系統工程師、企業策略師、科學家", warning: "小心過於傲慢與忽視他人情感。需學習接納不完美。" },
+  INTP: { name: "邏輯學家", traits: "具備創新精神、對知識充滿渴望", career: "軟體開發者、數據分析師、大學教授", warning: "避免過度沉迷於理論而脫離現實。需加強執行力。" },
+  ENTJ: { name: "指揮官", traits: "大膽、富有想像力且意志強大", career: "企業高管、律師、創業家", warning: "容易給人壓迫感，需學習傾聽與展現同理心。" },
+  ENTP: { name: "辯論家", traits: "聰明好奇、無法抗拒智力挑戰", career: "行銷創意、顧問、發明家", warning: "喜歡爭辯可能傷害和氣，應學會有時候「放手」。" },
+  INFJ: { name: "提倡者", traits: "安靜神秘，卻鼓舞人心且不知疲倦", career: "心理諮商師、作家、非營利組織領袖", warning: "容易把問題一肩扛起導致身心耗竭，請設定界線。" },
+  INFP: { name: "調停者", traits: "詩意、善良且利他主義", career: "藝術家、人力資源、內容創作者", warning: "過於理想化容易對現實失望，需建立落地執行的習慣。" },
+  ENFJ: { name: "主人公", traits: "充滿魅力與啟發性的領導者", career: "公關經理、教師、人資總監", warning: "過度關注他人需求而忽略自我，需留給自己喘息空間。" },
+  ENFP: { name: "競選者", traits: "熱情、富有創意且熱愛社交", career: "活動策劃、記者、品牌大使", warning: "專注力容易分散，應練習將一個項目徹底完成。" },
+  ISTJ: { name: "物流師", traits: "注重實用與事實，可靠性極高", career: "會計師、公務員、專案經理", warning: "過於固執於規則，需學會在變動中保持彈性。" },
+  ISFJ: { name: "守衛者", traits: "極度奉獻、隨時準備保護所愛之人", career: "護理師、社工、行政主管", warning: "習慣隱忍委屈，需學習勇敢表達自己的不滿和需求。" },
+  ESTJ: { name: "總經理", traits: "出色的管理者，無與倫比地管理事物", career: "營運總監、警官、金融經理", warning: "可能顯得死板且掌控慾強，應給予下屬更多信任與空間。" },
+  ESFJ: { name: "執政官", traits: "充滿愛心、極受歡迎並樂於助人", career: "護理人員、客服主管、活動主辦人", warning: "過度依賴外界的認同，需培養自我肯定的內在力量。" },
+  ISTP: { name: "鑑賞家", traits: "大膽實用的實驗者", career: "機械工程師、數據安全專家、飛行員", warning: "容易對長期承諾感到厭倦，需學習深耕一段關係或事業。" },
+  ISFP: { name: "探險家", traits: "靈活迷人的藝術家，時刻準備探索", career: "設計師、攝影師、自由工作者", warning: "面對衝突容易退縮，需建立應對壓力的健康機制。" },
+  ESTP: { name: "企業家", traits: "聰明精力充沛，享受邊緣生活", career: "銷售主管、創業家、體育教練", warning: "行事容易衝動不顧後果，做重大決定前需三思。" },
+  ESFP: { name: "表演者", traits: "自發精力充沛，生活不會無聊", career: "演員、公關人員、旅遊領隊", warning: "容易沉溺於當下享樂而忽略長遠規劃，需培養理財與規劃能力。" },
+};
+
+// ==========================================
+// 3. 狀態管理 (useReducer)
+// ==========================================
+const initialState = {
+  status: 'start', // 'start' | 'quiz' | 'result'
+  answers: {},     // { questionId: score (1-5) }
+  currentPage: 0,
+};
+
+function quizReducer(state, action) {
+  switch (action.type) {
+    case 'LOAD_SAVED':
+      return { ...action.payload };
+    case 'START':
+      return { ...state, status: 'quiz', currentPage: 0, answers: {} };
+    case 'ANSWER':
+      return {
+        ...state,
+        answers: { ...state.answers, [action.payload.id]: action.payload.score }
+      };
+    case 'NEXT_PAGE':
+      return { ...state, currentPage: state.currentPage + 1 };
+    case 'PREV_PAGE':
+      return { ...state, currentPage: Math.max(0, state.currentPage - 1) };
+    case 'SUBMIT':
+      return { ...state, status: 'result' };
+    case 'RESET':
+      return { status: 'start', answers: {}, currentPage: 0 };
+    default:
+      return state;
+  }
+}
+
+const QUESTIONS_PER_PAGE = 5;
+const TOTAL_PAGES = Math.ceil(QUESTIONS.length / QUESTIONS_PER_PAGE);
+
+// ==========================================
+// 4. 輔助元件
+// ==========================================
+
+// 單選按鈕組 (1-5 分)
+const RatingScale = ({ value, onChange }) => {
+  const options = [
+    { score: 1, label: "非常不同意", color: "bg-rose-500", hover: "hover:bg-rose-400" },
+    { score: 2, label: "不同意", color: "bg-orange-400", hover: "hover:bg-orange-300" },
+    { score: 3, label: "中立", color: "bg-slate-400", hover: "hover:bg-slate-300" },
+    { score: 4, label: "同意", color: "bg-teal-400", hover: "hover:bg-teal-300" },
+    { score: 5, label: "非常同意", color: "bg-emerald-500", hover: "hover:bg-emerald-400" },
+  ];
+
+  return (
+    <div className="flex flex-col sm:flex-row justify-between items-center w-full mt-4 gap-3 sm:gap-1">
+      <span className="text-sm font-medium text-rose-500 hidden sm:block w-20 text-right mr-4">非常不同意</span>
+      
+      <div className="flex justify-between w-full sm:w-auto sm:justify-center items-center gap-2 sm:gap-4 flex-1">
+        {options.map((opt) => (
+          <button
+            key={opt.score}
+            onClick={() => onChange(opt.score)}
+            className={`
+              relative rounded-full transition-all duration-300 active:scale-75
+              flex items-center justify-center
+              ${value === opt.score 
+                ? `${opt.color} text-white shadow-lg shadow-${opt.color}/40 scale-110 ring-4 ring-${opt.color}/20` 
+                : `bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 ${opt.hover} hover:border-transparent`}
+              ${opt.score === 3 ? 'w-10 h-10 sm:w-12 sm:h-12' : opt.score === 1 || opt.score === 5 ? 'w-14 h-14 sm:w-16 sm:h-16' : 'w-12 h-12 sm:w-14 sm:h-14'}
+            `}
+            aria-label={opt.label}
+          >
+            {value === opt.score && <CheckCircle2 className="w-1/2 h-1/2 opacity-80 animate-in zoom-in duration-200" />}
+          </button>
+        ))}
+      </div>
+
+      <span className="text-sm font-medium text-emerald-500 hidden sm:block w-20 text-left ml-4">非常同意</span>
+      
+      {/* 行動裝置顯示的文字 */}
+      <div className="flex justify-between w-full sm:hidden px-2 mt-1 text-xs font-semibold text-slate-500">
+        <span className="text-rose-500">不同意</span>
+        <span className="text-emerald-500">同意</span>
+      </div>
+    </div>
+  );
+};
+
+// 儀表板長條圖
+const ResultBar = ({ labelLeft, labelRight, percentLeft, colorClass }) => {
+  return (
+    <div className="mb-6 animate-in slide-in-from-bottom-4 duration-500 fade-in fill-mode-both">
+      <div className="flex justify-between mb-2 text-sm sm:text-base font-bold text-slate-700 dark:text-slate-300">
+        <span>{labelLeft} ({percentLeft}%)</span>
+        <span>{labelRight} ({100 - percentLeft}%)</span>
+      </div>
+      <div className="w-full h-4 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden flex shadow-inner">
+        <div 
+          className={`h-full ${colorClass} transition-all duration-1000 ease-out`}
+          style={{ width: `${percentLeft}%` }}
+        />
+        <div 
+          className={`h-full bg-slate-400/50 dark:bg-slate-600/50 transition-all duration-1000 ease-out`}
+          style={{ width: `${100 - percentLeft}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 5. 主應用程式
+// ==========================================
+export default function App() {
+  const [state, dispatch] = useReducer(quizReducer, initialState);
+
+  // 初始化：從 localStorage 讀取
+  useEffect(() => {
+    const saved = localStorage.getItem('mbti_progress');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.status !== 'result') {
+          dispatch({ type: 'LOAD_SAVED', payload: parsed });
+        }
+      } catch (e) {
+        console.error("Failed to parse saved state");
+      }
+    }
+  }, []);
+
+  // 每次狀態改變時儲存 (若完成測驗則不儲存，以便下次重新開始)
+  useEffect(() => {
+    if (state.status !== 'result') {
+      localStorage.setItem('mbti_progress', JSON.stringify(state));
+    } else {
+      localStorage.removeItem('mbti_progress');
+    }
+  }, [state]);
+
+  // --- 計算邏輯 ---
+  const results = useMemo(() => {
+    if (state.status !== 'result') return null;
+
+    let scores = { E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 };
+    // 總分計算基底：每題 1-5 分。
+    // 如果 dir 為 1 (正向)，選 5 則得 5 分正向，選 1 得 5 分反向。
+    // 為了簡單化，我們直接加總該維度的傾向量。
+    QUESTIONS.forEach(q => {
+      const ans = state.answers[q.id] || 3; // 沒答預設中立
+      const valPositive = ans;
+      const valNegative = 6 - ans; // 1->5, 5->1
+
+      if (q.dim === 'EI') {
+        if (q.dir === 1) { scores.E += valPositive; scores.I += valNegative; }
+        else { scores.I += valPositive; scores.E += valNegative; }
+      } else if (q.dim === 'SN') {
+        if (q.dir === 1) { scores.S += valPositive; scores.N += valNegative; }
+        else { scores.N += valPositive; scores.S += valNegative; }
+      } else if (q.dim === 'TF') {
+        if (q.dir === 1) { scores.T += valPositive; scores.F += valNegative; }
+        else { scores.F += valPositive; scores.T += valNegative; }
+      } else if (q.dim === 'JP') {
+        if (q.dir === 1) { scores.J += valPositive; scores.P += valNegative; }
+        else { scores.P += valPositive; scores.J += valNegative; }
+      }
+    });
+
+    const getPct = (a, b) => Math.round((a / (a + b)) * 100);
+
+    const percentages = {
+      E: getPct(scores.E, scores.I),
+      S: getPct(scores.S, scores.N),
+      T: getPct(scores.T, scores.F),
+      J: getPct(scores.J, scores.P),
+    };
+
+    const typeCode = `${percentages.E >= 50 ? 'E' : 'I'}${percentages.S >= 50 ? 'S' : 'N'}${percentages.T >= 50 ? 'T' : 'F'}${percentages.J >= 50 ? 'J' : 'P'}`;
+    
+    return {
+      type: typeCode,
+      data: PERSONALITIES[typeCode],
+      pct: percentages
+    };
+  }, [state.status, state.answers]);
+
+  // --- 畫面渲染 ---
+
+  // 1. 首頁 (Start)
+  if (state.status === 'start') {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:from-slate-900 dark:via-purple-950 dark:to-slate-900 text-slate-800 dark:text-slate-100 transition-colors duration-500">
+        <div className="max-w-2xl w-full bg-white/60 dark:bg-black/40 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-3xl p-8 sm:p-12 shadow-2xl text-center animate-in zoom-in-95 duration-500">
+          <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg mb-6 transform rotate-3">
+            <BrainCircuit className="w-10 h-10 text-white" />
+          </div>
+          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
+            MBTI 深度人格解析
+          </h1>
+          <p className="text-lg text-slate-600 dark:text-slate-300 mb-8 leading-relaxed">
+            透過 88 題專業量表，精準剖析你的核心人格特質、潛力優勢與職涯發展。測驗過程將自動儲存，無須擔心進度遺失。
+          </p>
+          
+          {Object.keys(state.answers).length > 0 && state.currentPage > 0 ? (
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button 
+                onClick={() => dispatch({ type: 'START' })}
+                className="px-8 py-4 rounded-xl font-bold bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 hover:bg-slate-50 transition-all hover:-translate-y-1 shadow-md active:scale-95 border border-indigo-100 dark:border-slate-700"
+              >
+                重新開始
+              </button>
+              <button 
+                onClick={() => dispatch({ type: 'NEXT_PAGE', payload: null })} // Trigger re-render to quiz state implicitly handled below, wait need to just set state to quiz.
+                // Correction: Status is 'start', if they have answers, they shouldn't be in 'start' unless they refreshed and it loaded.
+                // If it loaded, status should have been updated. The init hook doesn't set status to 'quiz'. Let's fix that.
+                // Actually, our init hook DOES restore status to 'quiz' if they were there. So this block might not trigger.
+                // Let's just provide a simple Start button.
+                disabled 
+                className="hidden" 
+              />
+            </div>
+          ) : (
+            <button 
+              onClick={() => dispatch({ type: 'START' })}
+              className="group relative inline-flex items-center justify-center px-10 py-4 font-bold text-white transition-all duration-300 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl hover:from-indigo-500 hover:to-purple-500 hover:shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-1 active:scale-95 overflow-hidden"
+            >
+              <span className="relative flex items-center gap-2">
+                開始測驗 <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </span>
+            </button>
+          )}
+          
+          <div className="mt-8 text-sm text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2">
+            <AlertCircle className="w-4 h-4" /> 預計耗時：10 - 15 分鐘
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. 測驗進行中 (Quiz)
+  if (state.status === 'quiz') {
+    const startIndex = state.currentPage * QUESTIONS_PER_PAGE;
+    const currentQuestions = QUESTIONS.slice(startIndex, startIndex + QUESTIONS_PER_PAGE);
+    const isFirstPage = state.currentPage === 0;
+    const isLastPage = state.currentPage === TOTAL_PAGES - 1;
+    
+    // 檢查目前頁面是否全部答完
+    const allAnsweredOnPage = currentQuestions.every(q => state.answers[q.id]);
+    const progressPercent = (Object.keys(state.answers).length / QUESTIONS.length) * 100;
+
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 py-8 px-4 transition-colors duration-500">
+        <div className="max-w-3xl mx-auto">
+          {/* 進度條列 */}
+          <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md rounded-2xl p-4 shadow-sm mb-6 sticky top-4 z-10 border border-slate-200 dark:border-slate-700">
+            <div className="flex justify-between items-center mb-2 text-sm font-semibold">
+              <span className="text-indigo-600 dark:text-indigo-400">完成度</span>
+              <span>{Math.round(progressPercent)}% ({Object.keys(state.answers).length}/{QUESTIONS.length})</span>
+            </div>
+            <div className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500 ease-out"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
+
+          {/* 題目列表 */}
+          <div className="space-y-6">
+            {currentQuestions.map((q, idx) => (
+              <div 
+                key={q.id} 
+                className="bg-white dark:bg-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200 dark:border-slate-700 animate-in slide-in-from-right-8 fade-in duration-500 fill-mode-both"
+                style={{ animationDelay: `${idx * 100}ms` }}
+              >
+                <h3 className="text-lg sm:text-xl font-bold mb-6 text-slate-800 dark:text-slate-100 leading-snug">
+                  <span className="text-indigo-300 dark:text-indigo-500 mr-2 text-sm">Q{q.id}.</span>
+                  {q.text}
+                </h3>
+                <RatingScale 
+                  value={state.answers[q.id]} 
+                  onChange={(score) => dispatch({ type: 'ANSWER', payload: { id: q.id, score } })} 
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* 底部導航 */}
+          <div className="mt-8 flex justify-between items-center bg-white/50 dark:bg-slate-800/50 backdrop-blur rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
+            <button
+              onClick={() => dispatch({ type: 'PREV_PAGE' })}
+              disabled={isFirstPage}
+              className={`flex items-center gap-2 px-5 py-3 rounded-xl font-medium transition-all ${
+                isFirstPage 
+                  ? 'opacity-30 cursor-not-allowed' 
+                  : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:shadow-md hover:-translate-y-0.5 active:scale-95'
+              }`}
+            >
+              <ChevronLeft className="w-5 h-5" /> 上一頁
+            </button>
+            
+            <div className="text-sm font-medium text-slate-500">
+              頁面 {state.currentPage + 1} / {TOTAL_PAGES}
+            </div>
+
+            {isLastPage ? (
+              <button
+                onClick={() => dispatch({ type: 'SUBMIT' })}
+                disabled={!allAnsweredOnPage}
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white transition-all ${
+                  allAnsweredOnPage 
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:shadow-lg hover:shadow-emerald-500/30 hover:-translate-y-0.5 active:scale-95' 
+                    : 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed'
+                }`}
+              >
+                看結果 <Sparkles className="w-5 h-5" />
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  dispatch({ type: 'NEXT_PAGE' });
+                }}
+                disabled={!allAnsweredOnPage}
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${
+                  allAnsweredOnPage 
+                    ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-500/30 hover:-translate-y-0.5 active:scale-95' 
+                    : 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed'
+                }`}
+              >
+                下一頁 <ChevronRight className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 3. 結果頁 (Result)
+  if (state.status === 'result' && results) {
+    const { type, data, pct } = results;
+
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-12 px-4 transition-colors duration-500">
+        <div className="max-w-4xl mx-auto space-y-8">
+          
+          {/* Header Card */}
+          <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl p-8 sm:p-12 shadow-2xl border border-white/50 dark:border-slate-800 text-center animate-in zoom-in-95 duration-700">
+            <h2 className="text-xl sm:text-2xl text-slate-500 dark:text-slate-400 font-bold tracking-widest uppercase mb-2">你的性格類型是</h2>
+            <div className="text-6xl sm:text-8xl font-extrabold mb-4 bg-clip-text text-transparent bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
+              {type}
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-slate-100 mb-6">
+              {data.name}
+            </h1>
+            <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
+              "{data.traits}"
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* 特質光譜 (Progress Bars) */}
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-xl border border-slate-100 dark:border-slate-800 animate-in slide-in-from-left-8 duration-700 delay-150 fill-mode-both">
+              <h3 className="text-xl font-bold mb-8 flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                <ActivityIcon /> 特質光譜分析
+              </h3>
+              
+              <ResultBar labelLeft="外向 (E)" labelRight="內向 (I)" percentLeft={pct.E} colorClass="bg-blue-500" />
+              <ResultBar labelLeft="實感 (S)" labelRight="直覺 (N)" percentLeft={pct.S} colorClass="bg-amber-500" />
+              <ResultBar labelLeft="思考 (T)" labelRight="情感 (F)" percentLeft={pct.T} colorClass="bg-emerald-500" />
+              <ResultBar labelLeft="判斷 (J)" labelRight="感知 (P)" percentLeft={pct.J} colorClass="bg-purple-500" />
+            </div>
+
+            {/* 詳細解析 */}
+            <div className="space-y-8 animate-in slide-in-from-right-8 duration-700 delay-300 fill-mode-both">
+              <div className="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-950/50 dark:to-blue-950/50 rounded-3xl p-8 shadow-md border border-indigo-100 dark:border-indigo-900/30">
+                <h3 className="text-lg font-bold mb-3 flex items-center gap-2 text-indigo-800 dark:text-indigo-300">
+                  <Compass className="w-5 h-5" /> 適合職涯發展
+                </h3>
+                <p className="text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
+                  {data.career}
+                </p>
+              </div>
+
+              <div className="bg-gradient-to-br from-rose-50 to-orange-50 dark:from-rose-950/50 dark:to-orange-950/50 rounded-3xl p-8 shadow-md border border-rose-100 dark:border-rose-900/30">
+                <h3 className="text-lg font-bold mb-3 flex items-center gap-2 text-rose-800 dark:text-rose-300">
+                  <Target className="w-5 h-5" /> 發展警示與建議
+                </h3>
+                <p className="text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
+                  {data.warning}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* 重新測驗按鈕 */}
+          <div className="text-center pt-8 animate-in fade-in duration-1000 delay-500 fill-mode-both">
+            <button
+              onClick={() => dispatch({ type: 'RESET' })}
+              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-lg hover:shadow-xl hover:-translate-y-1 active:scale-95 transition-all border border-slate-200 dark:border-slate-700"
+            >
+              <RotateCcw className="w-5 h-5" /> 重新測驗
+            </button>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+// 供圖標使用
+function ActivityIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-activity">
+      <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+    </svg>
+  );
+}
