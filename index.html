@@ -5,13 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MBTI 深度人格解析</title>
   
+  <!-- React & ReactDOM -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   
+  <!-- Babel for JSX compilation in the browser -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   
+  <!-- Optional inline styles for custom animations -->
   <style>
     @keyframes zoomIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
     @keyframes slideInFromRight { from { opacity: 0; transform: translateX(2rem); } to { opacity: 1; transform: translateX(0); } }
@@ -155,4 +159,420 @@
       INFP: { name: "調停者", traits: "詩意、善良且利他主義", career: "藝術家、人力資源、內容創作者", warning: "過於理想化容易對現實失望，需建立落地執行的習慣。" },
       ENFJ: { name: "主人公", traits: "充滿魅力與啟發性的領導者", career: "公關經理、教師、人資總監", warning: "過度關注他人需求而忽略自我，需留給自己喘息空間。" },
       ENFP: { name: "競選者", traits: "熱情、富有創意且熱愛社交", career: "活動策劃、記者、品牌大使", warning: "專注力容易分散，應練習將一個項目徹底完成。" },
-      ISTJ: { name: "物流師", traits: "注重實用與事實，可靠性極高", career: "會計師、公務員、專案經理", warning: "過
+      ISTJ: { name: "物流師", traits: "注重實用與事實，可靠性極高", career: "會計師、公務員、專案經理", warning: "過於固執於規則，需學會在變動中保持彈性。" },
+      ISFJ: { name: "守衛者", traits: "極度奉獻、隨時準備保護所愛之人", career: "護理師、社工、行政主管", warning: "習慣隱忍委屈，需學習勇敢表達自己的不滿和需求。" },
+      ESTJ: { name: "總經理", traits: "出色的管理者，無與倫比地管理事物", career: "營運總監、警官、金融經理", warning: "可能顯得死板且掌控慾強，應給予下屬更多信任與空間。" },
+      ESFJ: { name: "執政官", traits: "充滿愛心、極受歡迎並樂於助人", career: "護理人員、客服主管、活動主辦人", warning: "過度依賴外界的認同，需培養自我肯定的內在力量。" },
+      ISTP: { name: "鑑賞家", traits: "大膽實用的實驗者", career: "機械工程師、數據安全專家、飛行員", warning: "容易對長期承諾感到厭倦，需學習深耕一段關係或事業。" },
+      ISFP: { name: "探險家", traits: "靈活迷人的藝術家，時刻準備探索", career: "設計師、攝影師、自由工作者", warning: "面對衝突容易退縮，需建立應對壓力的健康機制。" },
+      ESTP: { name: "企業家", traits: "聰明精力充沛，享受邊緣生活", career: "銷售主管、創業家、體育教練", warning: "行事容易衝動不顧後果，做重大決定前需三思。" },
+      ESFP: { name: "表演者", traits: "自發精力充沛，生活不會無聊", career: "演員、公關人員、旅遊領隊", warning: "容易沉溺於當下享樂而忽略長遠規劃，需培養理財與規劃能力。" },
+    };
+
+    // ==========================================
+    // 3. 狀態管理 (useReducer)
+    // ==========================================
+    const initialState = {
+      status: 'start', 
+      answers: {},      
+      currentPage: 0,
+    };
+
+    function quizReducer(state, action) {
+      switch (action.type) {
+        case 'LOAD_SAVED':
+          return { ...action.payload };
+        case 'START':
+          return { ...state, status: 'quiz', currentPage: 0, answers: {} };
+        case 'CONTINUE':
+          return { ...state, status: 'quiz' };
+        case 'ANSWER':
+          return {
+            ...state,
+            answers: { ...state.answers, [action.payload.id]: action.payload.score }
+          };
+        case 'NEXT_PAGE':
+          return { ...state, currentPage: state.currentPage + 1 };
+        case 'PREV_PAGE':
+          return { ...state, currentPage: Math.max(0, state.currentPage - 1) };
+        case 'SUBMIT':
+          return { ...state, status: 'result' };
+        case 'RESET':
+          return { status: 'start', answers: {}, currentPage: 0 };
+        default:
+          return state;
+      }
+    }
+
+    const QUESTIONS_PER_PAGE = 5;
+    const TOTAL_PAGES = Math.ceil(QUESTIONS.length / QUESTIONS_PER_PAGE);
+
+    // ==========================================
+    // 4. 輔助元件
+    // ==========================================
+
+    const RatingScale = ({ value, onChange }) => {
+      const options = [
+        { score: 1, label: "非常不同意", color: "bg-rose-500", hover: "hover:bg-rose-400" },
+        { score: 2, label: "不同意", color: "bg-orange-400", hover: "hover:bg-orange-300" },
+        { score: 3, label: "中立", color: "bg-slate-400", hover: "hover:bg-slate-300" },
+        { score: 4, label: "同意", color: "bg-teal-400", hover: "hover:bg-teal-300" },
+        { score: 5, label: "非常同意", color: "bg-emerald-500", hover: "hover:bg-emerald-400" },
+      ];
+
+      return (
+        <div className="flex flex-col sm:flex-row justify-between items-center w-full mt-4 gap-3 sm:gap-1">
+          <span className="text-sm font-medium text-rose-500 hidden sm:block w-20 text-right mr-4">非常不同意</span>
+          
+          <div className="flex justify-between w-full sm:w-auto sm:justify-center items-center gap-2 sm:gap-4 flex-1">
+            {options.map((opt) => (
+              <button
+                key={opt.score}
+                onClick={() => onChange(opt.score)}
+                className={`
+                  relative rounded-full transition-all duration-300 active:scale-75
+                  flex items-center justify-center
+                  ${value === opt.score 
+                    ? `${opt.color} text-white shadow-lg scale-110 ring-4` 
+                    : `bg-slate-100 border-2 border-slate-200 ${opt.hover} hover:border-transparent`}
+                  ${opt.score === 3 ? 'w-10 h-10 sm:w-12 sm:h-12' : opt.score === 1 || opt.score === 5 ? 'w-14 h-14 sm:w-16 sm:h-16' : 'w-12 h-12 sm:w-14 sm:h-14'}
+                `}
+                aria-label={opt.label}
+              >
+                {value === opt.score && <CheckCircle2 className="w-1/2 h-1/2 opacity-80 animate-in zoom-in-95 duration-200" />}
+              </button>
+            ))}
+          </div>
+
+          <span className="text-sm font-medium text-emerald-500 hidden sm:block w-20 text-left ml-4">非常同意</span>
+          
+          <div className="flex justify-between w-full sm:hidden px-2 mt-1 text-xs font-semibold text-slate-500">
+            <span className="text-rose-500">不同意</span>
+            <span className="text-emerald-500">同意</span>
+          </div>
+        </div>
+      );
+    };
+
+    const ResultBar = ({ labelLeft, labelRight, percentLeft, colorClass }) => {
+      return (
+        <div className="mb-6 animate-in slide-in-from-bottom-4 duration-500 fill-mode-both">
+          <div className="flex justify-between mb-2 text-sm sm:text-base font-bold text-slate-700">
+            <span>{labelLeft} ({percentLeft}%)</span>
+            <span>{labelRight} ({100 - percentLeft}%)</span>
+          </div>
+          <div className="w-full h-4 bg-slate-200 rounded-full overflow-hidden flex shadow-inner">
+            <div 
+              className={`h-full ${colorClass} transition-all duration-1000 ease-out`}
+              style={{ width: `${percentLeft}%` }}
+            />
+            <div 
+              className={`h-full bg-slate-400/50 transition-all duration-1000 ease-out`}
+              style={{ width: `${100 - percentLeft}%` }}
+            />
+          </div>
+        </div>
+      );
+    }
+
+    // ==========================================
+    // 5. 主應用程式
+    // ==========================================
+    function App() {
+      const [state, dispatch] = useReducer(quizReducer, initialState);
+
+      useEffect(() => {
+        const saved = localStorage.getItem('mbti_progress');
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (parsed.status !== 'result') {
+              dispatch({ type: 'LOAD_SAVED', payload: parsed });
+            }
+          } catch (e) {
+            console.error("Failed to parse saved state");
+          }
+        }
+      }, []);
+
+      useEffect(() => {
+        if (state.status !== 'result') {
+          localStorage.setItem('mbti_progress', JSON.stringify(state));
+        } else {
+          localStorage.removeItem('mbti_progress');
+        }
+      }, [state]);
+
+      const results = useMemo(() => {
+        if (state.status !== 'result') return null;
+
+        let scores = { E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 };
+        
+        QUESTIONS.forEach(q => {
+          const ans = state.answers[q.id] || 3; 
+          const valPositive = ans;
+          const valNegative = 6 - ans;
+
+          if (q.dim === 'EI') {
+            if (q.dir === 1) { scores.E += valPositive; scores.I += valNegative; }
+            else { scores.I += valPositive; scores.E += valNegative; }
+          } else if (q.dim === 'SN') {
+            if (q.dir === 1) { scores.S += valPositive; scores.N += valNegative; }
+            else { scores.N += valPositive; scores.S += valNegative; }
+          } else if (q.dim === 'TF') {
+            if (q.dir === 1) { scores.T += valPositive; scores.F += valNegative; }
+            else { scores.F += valPositive; scores.T += valNegative; }
+          } else if (q.dim === 'JP') {
+            if (q.dir === 1) { scores.J += valPositive; scores.P += valNegative; }
+            else { scores.P += valPositive; scores.J += valNegative; }
+          }
+        });
+
+        const getPct = (a, b) => Math.round((a / (a + b)) * 100);
+
+        const percentages = {
+          E: getPct(scores.E, scores.I),
+          S: getPct(scores.S, scores.N),
+          T: getPct(scores.T, scores.F),
+          J: getPct(scores.J, scores.P),
+        };
+
+        const typeCode = `${percentages.E >= 50 ? 'E' : 'I'}${percentages.S >= 50 ? 'S' : 'N'}${percentages.T >= 50 ? 'T' : 'F'}${percentages.J >= 50 ? 'J' : 'P'}`;
+        
+        return {
+          type: typeCode,
+          data: PERSONALITIES[typeCode],
+          pct: percentages
+        };
+      }, [state.status, state.answers]);
+
+      if (state.status === 'start') {
+        return (
+          <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 text-slate-800 transition-colors duration-500">
+            <div className="max-w-2xl w-full bg-white/60 backdrop-blur-xl border border-white/40 rounded-3xl p-8 sm:p-12 shadow-2xl text-center animate-in zoom-in-95 duration-500">
+              <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg mb-6 transform rotate-3">
+                <BrainCircuit className="w-10 h-10 text-white" />
+              </div>
+              <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">
+                MBTI 深度人格解析
+              </h1>
+              <p className="text-lg text-slate-600 mb-8 leading-relaxed">
+                透過 88 題專業量表，精準剖析你的核心人格特質、潛力優勢與職涯發展。測驗過程將自動儲存，無須擔心進度遺失。
+              </p>
+              
+              {Object.keys(state.answers).length > 0 && state.currentPage > 0 ? (
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <button 
+                    onClick={() => dispatch({ type: 'START' })}
+                    className="px-8 py-4 rounded-xl font-bold bg-white text-indigo-600 hover:bg-slate-50 transition-all shadow-md active:scale-95 border border-indigo-100"
+                  >
+                    重新開始
+                  </button>
+                  <button 
+                    onClick={() => dispatch({ type: 'CONTINUE' })}
+                    className="px-8 py-4 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-all shadow-md active:scale-95 border border-transparent"
+                  >
+                    繼續測驗
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => dispatch({ type: 'START' })}
+                  className="group relative inline-flex items-center justify-center px-10 py-4 font-bold text-white transition-all duration-300 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl hover:from-indigo-500 hover:to-purple-500 hover:shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-1 active:scale-95 overflow-hidden"
+                >
+                  <span className="relative flex items-center gap-2">
+                    開始測驗 <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </span>
+                </button>
+              )}
+              
+              <div className="mt-8 text-sm text-slate-500 flex items-center justify-center gap-2">
+                <AlertCircle className="w-4 h-4" /> 預計耗時：10 - 15 分鐘
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      if (state.status === 'quiz') {
+        const startIndex = state.currentPage * QUESTIONS_PER_PAGE;
+        const currentQuestions = QUESTIONS.slice(startIndex, startIndex + QUESTIONS_PER_PAGE);
+        const isFirstPage = state.currentPage === 0;
+        const isLastPage = state.currentPage === TOTAL_PAGES - 1;
+        
+        const allAnsweredOnPage = currentQuestions.every(q => state.answers[q.id]);
+        const progressPercent = (Object.keys(state.answers).length / QUESTIONS.length) * 100;
+
+        return (
+          <div className="min-h-screen bg-slate-50 text-slate-800 py-8 px-4 transition-colors duration-500">
+            <div className="max-w-3xl mx-auto">
+              <div className="bg-white/80 backdrop-blur-md rounded-2xl p-4 shadow-sm mb-6 sticky top-4 z-10 border border-slate-200">
+                <div className="flex justify-between items-center mb-2 text-sm font-semibold">
+                  <span className="text-indigo-600">完成度</span>
+                  <span>{Math.round(progressPercent)}% ({Object.keys(state.answers).length}/{QUESTIONS.length})</span>
+                </div>
+                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500 ease-out"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                {currentQuestions.map((q, idx) => (
+                  <div 
+                    key={q.id} 
+                    className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200 animate-in slide-in-from-right-8 duration-500 fill-mode-both"
+                    style={{ animationDelay: `${idx * 100}ms` }}
+                  >
+                    <h3 className="text-lg sm:text-xl font-bold mb-6 text-slate-800 leading-snug">
+                      <span className="text-indigo-300 mr-2 text-sm">Q{q.id}.</span>
+                      {q.text}
+                    </h3>
+                    <RatingScale 
+                      value={state.answers[q.id]} 
+                      onChange={(score) => dispatch({ type: 'ANSWER', payload: { id: q.id, score } })} 
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8 flex justify-between items-center bg-white/50 backdrop-blur rounded-2xl p-4 border border-slate-200">
+                <button
+                  onClick={() => dispatch({ type: 'PREV_PAGE' })}
+                  disabled={isFirstPage}
+                  className={`flex items-center gap-2 px-5 py-3 rounded-xl font-medium transition-all ${
+                    isFirstPage 
+                      ? 'opacity-30 cursor-not-allowed' 
+                      : 'bg-white text-slate-700 hover:shadow-md active:scale-95'
+                  }`}
+                >
+                  <ChevronLeft className="w-5 h-5" /> 上一頁
+                </button>
+                
+                <div className="text-sm font-medium text-slate-500">
+                  頁面 {state.currentPage + 1} / {TOTAL_PAGES}
+                </div>
+
+                {isLastPage ? (
+                  <button
+                    onClick={() => {
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                      dispatch({ type: 'SUBMIT' });
+                    }}
+                    disabled={!allAnsweredOnPage}
+                    className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white transition-all ${
+                      allAnsweredOnPage 
+                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:shadow-lg active:scale-95' 
+                        : 'bg-slate-300 cursor-not-allowed'
+                    }`}
+                  >
+                    看結果 <Sparkles className="w-5 h-5" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                      dispatch({ type: 'NEXT_PAGE' });
+                    }}
+                    disabled={!allAnsweredOnPage}
+                    className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${
+                      allAnsweredOnPage 
+                        ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-lg active:scale-95' 
+                        : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                    }`}
+                  >
+                    下一頁 <ChevronRight className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      if (state.status === 'result' && results) {
+        const { type, data, pct } = results;
+
+        return (
+          <div className="min-h-screen bg-slate-50 py-12 px-4 transition-colors duration-500">
+            <div className="max-w-4xl mx-auto space-y-8">
+              
+              <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-8 sm:p-12 shadow-2xl border border-white/50 text-center animate-in zoom-in-95 duration-700">
+                <h2 className="text-xl sm:text-2xl text-slate-500 font-bold tracking-widest uppercase mb-2">你的性格類型是</h2>
+                <div className="text-6xl sm:text-8xl font-extrabold mb-4 bg-clip-text text-transparent bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
+                  {type}
+                </div>
+                <h1 className="text-3xl sm:text-4xl font-bold text-slate-800 mb-6">
+                  {data.name}
+                </h1>
+                <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto">
+                  "{data.traits}"
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-8">
+                <div className="bg-white rounded-3xl p-8 shadow-xl border border-slate-100 animate-in slide-in-from-right-8 duration-700 delay-150 fill-mode-both">
+                  <h3 className="text-xl font-bold mb-8 flex items-center gap-2 text-slate-800">
+                     <ActivityIcon /> 特質光譜分析
+                  </h3>
+                  
+                  <ResultBar labelLeft="外向 (E)" labelRight="內向 (I)" percentLeft={pct.E} colorClass="bg-blue-500" />
+                  <ResultBar labelLeft="實感 (S)" labelRight="直覺 (N)" percentLeft={pct.S} colorClass="bg-amber-500" />
+                  <ResultBar labelLeft="思考 (T)" labelRight="情感 (F)" percentLeft={pct.T} colorClass="bg-emerald-500" />
+                  <ResultBar labelLeft="判斷 (J)" labelRight="感知 (P)" percentLeft={pct.J} colorClass="bg-purple-500" />
+                </div>
+
+                <div className="space-y-8 animate-in slide-in-from-right-8 duration-700 delay-300 fill-mode-both">
+                  <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-3xl p-8 shadow-md border border-indigo-100">
+                    <h3 className="text-lg font-bold mb-3 flex items-center gap-2 text-indigo-800">
+                      <Compass className="w-5 h-5" /> 適合職涯發展
+                    </h3>
+                    <p className="text-slate-700 leading-relaxed font-medium">
+                      {data.career}
+                    </p>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-rose-50 to-orange-50 rounded-3xl p-8 shadow-md border border-rose-100">
+                    <h3 className="text-lg font-bold mb-3 flex items-center gap-2 text-rose-800">
+                      <Target className="w-5 h-5" /> 發展警示與建議
+                    </h3>
+                    <p className="text-slate-700 leading-relaxed font-medium">
+                      {data.warning}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-center pt-8 animate-in zoom-in-95 duration-1000 delay-500 fill-mode-both">
+                <button
+                  onClick={() => dispatch({ type: 'RESET' })}
+                  className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-bold bg-white text-slate-700 shadow-lg hover:shadow-xl active:scale-95 transition-all border border-slate-200"
+                >
+                  <RotateCcw className="w-5 h-5" /> 重新測驗
+                </button>
+              </div>
+
+            </div>
+          </div>
+        );
+      }
+
+      return null;
+    }
+
+    function ActivityIcon() {
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-activity">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+        </svg>
+      );
+    }
+
+    // Render the React app
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
